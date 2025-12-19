@@ -8,7 +8,6 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from typing import Literal
 
-# === CONFIG ===
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "model", "completion_model.pkl")
 
 app = FastAPI(
@@ -17,14 +16,12 @@ app = FastAPI(
     version="1.0"
 )
 
-# Load model at startup
 try:
     model = joblib.load(MODEL_PATH)
     print("Model loaded successfully")
 except Exception as e:
     raise RuntimeError(f"Failed to load model: {str(e)}")
 
-# Input schema (matches your training features)
 class CourseData(BaseModel):
     TimeSpentOnCourse: float = Field(..., gt=0)
     NumberOfVideosWatched: int = Field(..., ge=0)
@@ -41,7 +38,6 @@ def health():
 @app.post("/predict")
 async def predict(data: CourseData):
     try:
-        # Convert to DataFrame (must match training columns exactly)
         input_df = pd.DataFrame([data.model_dump()])
 
         # Predict
