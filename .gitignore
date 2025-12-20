@@ -8,7 +8,5 @@ frontend/.next/
 frontend/.next/cache/
 .next/
 
-backend/.env
-.env.local
-frontend/.env.local
+
 *.env

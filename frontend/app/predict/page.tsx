@@ -49,7 +49,6 @@ interface PredictionOutput {
   will_complete: boolean;
   completion_probability: number;
   dropout_risk: "Low" | "Medium" | "High";
-  confidence: number;
   input_data: PredictionInput;
 }
 
@@ -410,14 +409,6 @@ export default function PredictPage() {
                           </Badge>
                         </div>
 
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm font-medium">
-                            Model Confidence
-                          </span>
-                          <span className="text-sm font-bold">
-                            {(prediction.confidence * 100).toFixed(2)}%
-                          </span>
-                        </div>
                       </CardContent>
                     </Card>
 
