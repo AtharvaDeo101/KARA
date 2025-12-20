@@ -5,3 +5,9 @@ pandas
 scikit-learn
 xgboost
 pydantic
+dotenv
+httpx
+os
+json
+typing
+scikit-learn
