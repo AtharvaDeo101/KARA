@@ -32,6 +32,9 @@ import {
   ArrowLeft,
 } from "lucide-react";
 
+// API Configuration - Change this to your backend URL
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
 interface PredictionInput {
   TimeSpentOnCourse: number;
   NumberOfVideosWatched: number;
@@ -62,53 +65,50 @@ export default function PredictPage() {
   });
   const [prediction, setPrediction] = useState<PredictionOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (
     field: keyof PredictionInput,
     value: string | number
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    setError(null); // Clear error when user types
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
 
-    // Simulate AI prediction with realistic logic
-    setTimeout(() => {
-      // Calculate completion probability based on multiple factors
-      const timeWeight = Math.min(formData.TimeSpentOnCourse / 100, 1) * 0.2;
-      const videoWeight =
-        Math.min(formData.NumberOfVideosWatched / 50, 1) * 0.15;
-      const quizWeight = Math.min(formData.NumberOfQuizzesTaken / 20, 1) * 0.15;
-      const scoreWeight = (formData.QuizScores / 100) * 0.3;
-      const completionWeight = (formData.CompletionRate / 100) * 0.2;
+    try {
+      // Call the actual backend API
+      const response = await fetch(`${API_URL}/predict`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
 
-      const baseProbability =
-        timeWeight + videoWeight + quizWeight + scoreWeight + completionWeight;
-      const probability = Math.min(
-        Math.max(baseProbability + (Math.random() * 0.1 - 0.05), 0),
-        1
-      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.detail || `API Error: ${response.status} ${response.statusText}`
+        );
+      }
 
-      const willComplete = probability > 0.5;
-      let dropoutRisk: "Low" | "Medium" | "High";
-
-      if (probability > 0.7) dropoutRisk = "Low";
-      else if (probability > 0.4) dropoutRisk = "Medium";
-      else dropoutRisk = "High";
-
-      const result: PredictionOutput = {
-        will_complete: willComplete,
-        completion_probability: Number.parseFloat(probability.toFixed(4)),
-        dropout_risk: dropoutRisk,
-        confidence: Number.parseFloat((0.85 + Math.random() * 0.1).toFixed(4)),
-        input_data: formData,
-      };
-
+      const result: PredictionOutput = await response.json();
       setPrediction(result);
+    } catch (err) {
+      console.error("Prediction error:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to get prediction. Please ensure the backend server is running on port 8000."
+      );
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const getRiskColor = (risk: string) => {
@@ -148,6 +148,28 @@ export default function PredictPage() {
                 completion
               </p>
             </div>
+
+            {/* Error Alert */}
+            {error && (
+              <div className="mb-8 max-w-6xl mx-auto">
+                <Card className="border-red-500/50 bg-red-500/5">
+                  <CardContent className="pt-6">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="w-5 h-5 text-red-500 mt-0.5" />
+                      <div>
+                        <h3 className="font-semibold text-red-500 mb-1">
+                          Connection Error
+                        </h3>
+                        <p className="text-sm text-muted-foreground">{error}</p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Make sure your backend server is running: <code className="bg-muted px-1 py-0.5 rounded">python backend/app.py</code>
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
             <div className="grid lg:grid-cols-2 gap-8">
               {/* Input Form */}
