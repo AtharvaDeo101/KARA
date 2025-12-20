@@ -11,3 +11,4 @@ frontend/.next/cache/
 backend/.env
 .env.local
 frontend/.env.local
+*.env
