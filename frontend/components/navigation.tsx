@@ -24,9 +24,6 @@ export function Navigation() {
           <Link href="/predict" className="text-[18px] font-bold leading-[20px] hover:text-primary transition-colors">
             Predictions
           </Link>
-          <Link href="/#about" className="text-[18px] font-bold leading-[20px] hover:text-primary transition-colors">
-            About
-          </Link>
         </div>
 
         <Link href="/predict">

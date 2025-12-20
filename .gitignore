@@ -6,3 +6,4 @@ frontend/package-lock.json
 
 frontend/.next/
 frontend/.next/cache/
+/.next

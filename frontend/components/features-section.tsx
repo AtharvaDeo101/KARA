@@ -22,23 +22,7 @@ export function FeaturesSection() {
       description:
         "Monitor quiz scores, video engagement, and completion rates to understand learner progress at a glance.",
     },
-    {
-      icon: Users,
-      title: "Mentor Dashboard",
-      description:
-        "Comprehensive dashboards for mentors and admins to track multiple learners and make data-driven decisions.",
-    },
-    {
-      icon: Shield,
-      title: "Data-Driven Insights",
-      description:
-        "Transform raw learning data into actionable insights with confidence scores and probability metrics.",
-    },
-    {
-      icon: Zap,
-      title: "Instant Analysis",
-      description: "Get immediate predictions and recommendations as soon as learner data is submitted to the system.",
-    },
+
   ]
 
   return (
