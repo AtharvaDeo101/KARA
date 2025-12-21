@@ -20,7 +20,7 @@ load_dotenv()
 
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "models", "completion_model.pkl")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_API_URL="https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent"
 
 app = FastAPI(
     title="KARA Learning Intelligence Tool",
@@ -28,12 +28,11 @@ app = FastAPI(
     version="1.0"
 )
 
-# CORS configuration
-# IMPORTANT: Replace with your EXACT Vercel domain(s)
-VERCEL_DOMAINS = [
-    "https://kara-brown.vercel.app/",  # ← Update this to your actual domain
-    # For development only - remove in production
-    "http://localhost:3000",
+# CORS configuration - FIXED
+# Allow your Vercel domain and development environments
+ALLOWED_ORIGINS = [
+    "https://kara-brown.vercel.app",  # Production domain (removed trailing slash)
+    "http://localhost:3000",           # Local development
     "http://localhost:3001",
     "http://127.0.0.1:3000",
     "http://127.0.0.1:3001",
@@ -41,7 +40,7 @@ VERCEL_DOMAINS = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=VERCEL_DOMAINS,
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -55,7 +54,6 @@ try:
     logger.info("Model loaded successfully")
 except Exception as e:
     logger.error(f"Failed to load model: {str(e)}", exc_info=True)
-    # Don't raise here - let the app start but return error on /predict
     model = None
 
 # Check Gemini API key
@@ -107,13 +105,13 @@ def health():
 async def predict(data: CourseData):
     if model is None:
         raise HTTPException(status_code=503, detail="Prediction model is not loaded. Service unavailable.")
-
+    
     try:
         input_df = pd.DataFrame([data.model_dump()])
         proba = model.predict_proba(input_df)[0]
         prediction = model.predict(input_df)[0]
         completion_prob = float(proba[1])
-
+        
         return {
             "will_complete": bool(prediction),
             "completion_probability": round(completion_prob, 4),
@@ -133,21 +131,32 @@ async def predict(data: CourseData):
 async def chat(request: ChatRequest):
     if not GEMINI_API_KEY:
         raise HTTPException(status_code=503, detail="Gemini API is not configured.")
-
+    
     try:
         contents = []
+        system_instruction = """You are KARA (Knowledge & Achievement Retention Assistant), an AI learning companion designed to help students succeed in their online courses.
 
-        system_instruction = """You are a helpful AI learning assistant for KARA..."""  # (keep your original system prompt)
+Your role is to:
+- Provide encouragement and motivation for learners
+- Answer questions about course content and learning strategies
+- Offer study tips and time management advice
+- Help learners understand their progress and predictions
+- Be supportive, friendly, and educational
 
+Keep responses concise (2-3 paragraphs max) and actionable."""
+
+        # Add system instruction
         contents.append({"role": "user", "parts": [{"text": system_instruction}]})
-        contents.append({"role": "model", "parts": [{"text": "Understood! Ready to help."}]})
-
+        contents.append({"role": "model", "parts": [{"text": "Understood! I'm KARA, your learning assistant. I'm here to help you succeed in your courses. How can I help you today?"}]})
+        
+        # Add conversation history (last 10 messages)
         for msg in request.history[-10:]:
             role = "user" if msg.role.lower() == "user" else "model"
             contents.append({"role": role, "parts": [{"text": msg.content}]})
-
+        
+        # Add current message
         contents.append({"role": "user", "parts": [{"text": request.message}]})
-
+        
         async with httpx.AsyncClient(timeout=45.0) as client:
             response = await client.post(
                 f"{GEMINI_API_URL}?key={GEMINI_API_KEY}",
@@ -160,12 +169,10 @@ async def chat(request: ChatRequest):
                 }
             )
             response.raise_for_status()
-
             result = response.json()
             assistant_message = result["candidates"][0]["content"]["parts"][0]["text"]
-
             return ChatResponse(response=assistant_message)
-
+    
     except httpx.HTTPStatusError as e:
         logger.error(f"Gemini API error: {e.response.text}")
         raise HTTPException(status_code=e.response.status_code, detail="Gemini API error")
@@ -173,12 +180,6 @@ async def chat(request: ChatRequest):
         logger.error(f"Chat error: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
-# CLI mode unchanged (omitted for brevity)
-
 if __name__ == "__main__":
-    import sys
-    if len(sys.argv) > 1:
-        run_cli()
-    else:
-        import uvicorn
-        uvicorn.run(app, host="0.0.0.0", port=8000)
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

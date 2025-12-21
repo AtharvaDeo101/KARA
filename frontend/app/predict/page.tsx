@@ -30,9 +30,10 @@ import {
   TrendingDown,
   TrendingUp,
   ArrowLeft,
+  Loader2,
 } from "lucide-react";
 
-// Use your deployed Render backend URL
+// Backend API URL - uses environment variable or defaults to your Render URL
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://kara-3.onrender.com";
 
 interface PredictionInput {
@@ -49,6 +50,7 @@ interface PredictionOutput {
   will_complete: boolean;
   completion_probability: number;
   dropout_risk: "Low" | "Medium" | "High";
+  confidence: number;
   input_data: PredictionInput;
 }
 
@@ -62,6 +64,7 @@ export default function PredictPage() {
     CourseCategory: "",
     DeviceType: "",
   });
+
   const [prediction, setPrediction] = useState<PredictionOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,6 +81,20 @@ export default function PredictPage() {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    setPrediction(null);
+
+    // Validate form data
+    if (!formData.CourseCategory || !formData.DeviceType) {
+      setError("Please select both Course Category and Device Type");
+      setIsLoading(false);
+      return;
+    }
+
+    if (formData.TimeSpentOnCourse <= 0) {
+      setError("Time spent on course must be greater than 0");
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const response = await fetch(`${API_URL}/predict`, {
@@ -89,12 +106,22 @@ export default function PredictPage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        if (response.status === 403 || response.status === 0) {
-          throw new Error("CORS error: The backend server may not allow requests from this domain. Please update CORS settings.");
+        const errorData = await response.json().catch(() => null);
+        
+        if (response.status === 503) {
+          throw new Error("The prediction service is temporarily unavailable. Please try again in a moment.");
         }
+        
+        if (response.status === 422) {
+          throw new Error(errorData?.detail || "Invalid input data. Please check your values.");
+        }
+        
+        if (response.status === 403 || response.status === 0) {
+          throw new Error("Unable to connect to the server. Please check your internet connection.");
+        }
+
         throw new Error(
-          errorData.detail || `API Error: ${response.status} ${response.statusText}`
+          errorData?.detail || `Server error: ${response.status}`
         );
       }
 
@@ -128,7 +155,6 @@ export default function PredictPage() {
   return (
     <main className="min-h-screen bg-background">
       <Navigation />
-
       <section className="py-24">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
@@ -155,7 +181,7 @@ export default function PredictPage() {
                 <Card className="border-red-500/50 bg-red-500/5">
                   <CardContent className="pt-6">
                     <div className="flex items-start gap-3">
-                      <AlertCircle className="w-5 h-5 text-red-500 mt-0.5" />
+                      <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
                       <div>
                         <h3 className="font-semibold text-red-500 mb-1">
                           Error
@@ -186,7 +212,7 @@ export default function PredictPage() {
                       <Input
                         id="timeSpent"
                         type="number"
-                        min="0"
+                        min="0.1"
                         step="0.1"
                         required
                         value={formData.TimeSpentOnCourse || ""}
@@ -196,6 +222,7 @@ export default function PredictPage() {
                             Number.parseFloat(e.target.value) || 0
                           )
                         }
+                        placeholder="e.g., 120.5"
                       />
                     </div>
 
@@ -213,6 +240,7 @@ export default function PredictPage() {
                             Number.parseInt(e.target.value) || 0
                           )
                         }
+                        placeholder="e.g., 15"
                       />
                     </div>
 
@@ -230,6 +258,7 @@ export default function PredictPage() {
                             Number.parseInt(e.target.value) || 0
                           )
                         }
+                        placeholder="e.g., 5"
                       />
                     </div>
 
@@ -251,6 +280,7 @@ export default function PredictPage() {
                             Number.parseFloat(e.target.value) || 0
                           )
                         }
+                        placeholder="e.g., 85.5"
                       />
                     </div>
 
@@ -272,6 +302,7 @@ export default function PredictPage() {
                             Number.parseFloat(e.target.value) || 0
                           )
                         }
+                        placeholder="e.g., 65.0"
                       />
                     </div>
 
@@ -323,7 +354,14 @@ export default function PredictPage() {
                       className="w-full"
                       disabled={isLoading}
                     >
-                      {isLoading ? "Analyzing..." : "Generate Prediction"}
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Analyzing...
+                        </>
+                      ) : (
+                        "Generate Prediction"
+                      )}
                     </Button>
                   </form>
                 </CardContent>
@@ -393,6 +431,13 @@ export default function PredictPage() {
                             {prediction.dropout_risk}
                           </Badge>
                         </div>
+
+                        <div className="flex justify-between items-center pt-2 border-t">
+                          <span className="text-sm font-medium">Model Confidence</span>
+                          <span className="text-sm font-bold">
+                            {(prediction.confidence * 100).toFixed(2)}%
+                          </span>
+                        </div>
                       </CardContent>
                     </Card>
 
@@ -461,7 +506,6 @@ export default function PredictPage() {
           </div>
         </div>
       </section>
-
       <Footer />
       <ChatBot />
     </main>
