@@ -31,7 +31,7 @@ app.add_middleware(
         "http://localhost:3001",
         "http://127.0.0.1:3000",
         "http://127.0.0.1:3001",
-        "https://kara-8nh58i5nw-deoatharva44-gmailcoms-projects.vercel.app",  # ← Your main Vercel domain
+        "https://kara-brown.vercel.app/",  # ← Your main Vercel domain
         "*.vercel.app",  # ← Allows preview deployments (optional but useful)
         "https://*.vercel.app",  # ← Allows preview deployments
     ],
