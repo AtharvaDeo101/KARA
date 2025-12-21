@@ -7,7 +7,4 @@ xgboost
 pydantic
 dotenv
 httpx
-os
-json
-typing
 scikit-learn
