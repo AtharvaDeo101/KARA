@@ -33,7 +33,7 @@ import {
 } from "lucide-react";
 
 // API Configuration - Change this to your backend URL
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://kara-3.onrender.com";
 
 interface PredictionInput {
   TimeSpentOnCourse: number;
