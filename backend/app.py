@@ -15,7 +15,7 @@ load_dotenv()
 
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "models", "completion_model.pkl")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent"
+GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"  # updated to latest stable version
 
 app = FastAPI(
     title="Learning Intelligence Tool",
@@ -23,7 +23,7 @@ app = FastAPI(
     version="1.0"
 )
 
-# Add CORS middleware
+# Updated CORS - Added your Vercel domain and common preview domains
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -31,7 +31,9 @@ app.add_middleware(
         "http://localhost:3001",
         "http://127.0.0.1:3000",
         "http://127.0.0.1:3001",
-        # Add your production domain here when deploying
+        "https://kara-8nh58i5nw-deoatharva44-gmailcoms-projects.vercel.app",  # ← Your main Vercel domain
+        "*.vercel.app",  # ← Allows preview deployments (optional but useful)
+        "https://*.vercel.app",  # ← Allows preview deployments
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -100,7 +102,7 @@ async def predict(data: CourseData):
         input_df = pd.DataFrame([data.model_dump()])
         proba = model.predict_proba(input_df)[0]
         prediction = model.predict(input_df)[0]
-        completion_prob = proba[1]
+        completion_prob = proba[1]  # Probability of class 1 (complete)
 
         result = {
             "will_complete": bool(prediction),
@@ -129,7 +131,6 @@ async def chat(request: ChatRequest):
         # Build Gemini conversation history
         contents = []
 
-        # System instruction (Gemini doesn't have a direct "system" role, we put it first)
         system_instruction = """You are a helpful AI learning assistant for KARA, an AI-powered learning intelligence platform. 
 Your role is to help users understand:
 
@@ -150,7 +151,6 @@ Be friendly, concise, and focus on educational insights. If asked about technica
 Keep responses under 150 words unless more detail is specifically requested. Use clear examples when helpful.
 If you don't know something specific about the platform, acknowledge it honestly."""
 
-        # Add system instruction as the first message
         contents.append({
             "role": "user",
             "parts": [{"text": system_instruction}]
@@ -160,7 +160,6 @@ If you don't know something specific about the platform, acknowledge it honestly
             "parts": [{"text": "Understood! I'm ready to help with KARA learning insights."}]
         })
 
-        # Add conversation history (Gemini uses "user" and "model" roles)
         for msg in request.history[-10:]:
             role = "user" if msg.role == "user" else "model"
             contents.append({
@@ -168,13 +167,11 @@ If you don't know something specific about the platform, acknowledge it honestly
                 "parts": [{"text": msg.content}]
             })
 
-        # Add current user message
         contents.append({
             "role": "user",
             "parts": [{"text": request.message}]
         })
 
-        # Call Gemini API
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
                 f"{GEMINI_API_URL}?key={GEMINI_API_KEY}",
@@ -277,6 +274,5 @@ if __name__ == "__main__":
         run_cli()
     else:
         print("🚀 KARA Learning")
-
         import uvicorn
         uvicorn.run(app, host="0.0.0.0", port=8000)

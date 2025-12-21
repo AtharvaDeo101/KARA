@@ -32,7 +32,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 
-// API Configuration - Change this to your backend URL
+// Use your deployed Render backend URL
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://kara-3.onrender.com";
 
 interface PredictionInput {
@@ -71,7 +71,7 @@ export default function PredictPage() {
     value: string | number
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    setError(null); // Clear error when user types
+    setError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -80,7 +80,6 @@ export default function PredictPage() {
     setError(null);
 
     try {
-      // Call the actual backend API
       const response = await fetch(`${API_URL}/predict`, {
         method: "POST",
         headers: {
@@ -91,6 +90,9 @@ export default function PredictPage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        if (response.status === 403 || response.status === 0) {
+          throw new Error("CORS error: The backend server may not allow requests from this domain. Please update CORS settings.");
+        }
         throw new Error(
           errorData.detail || `API Error: ${response.status} ${response.statusText}`
         );
@@ -103,7 +105,7 @@ export default function PredictPage() {
       setError(
         err instanceof Error
           ? err.message
-          : "Failed to get prediction. Please ensure the backend server is running on port 8000."
+          : "Failed to connect to the prediction service. Please try again later."
       );
     } finally {
       setIsLoading(false);
@@ -148,7 +150,6 @@ export default function PredictPage() {
               </p>
             </div>
 
-            {/* Error Alert */}
             {error && (
               <div className="mb-8 max-w-6xl mx-auto">
                 <Card className="border-red-500/50 bg-red-500/5">
@@ -157,12 +158,9 @@ export default function PredictPage() {
                       <AlertCircle className="w-5 h-5 text-red-500 mt-0.5" />
                       <div>
                         <h3 className="font-semibold text-red-500 mb-1">
-                          Connection Error
+                          Error
                         </h3>
                         <p className="text-sm text-muted-foreground">{error}</p>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          Make sure your backend server is running: <code className="bg-muted px-1 py-0.5 rounded">python backend/app.py</code>
-                        </p>
                       </div>
                     </div>
                   </CardContent>
@@ -290,15 +288,11 @@ export default function PredictPage() {
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Programming">
-                            Programming
-                          </SelectItem>
+                          <SelectItem value="Programming">Programming</SelectItem>
                           <SelectItem value="Business">Business</SelectItem>
                           <SelectItem value="Design">Design</SelectItem>
                           <SelectItem value="Marketing">Marketing</SelectItem>
-                          <SelectItem value="Data Science">
-                            Data Science
-                          </SelectItem>
+                          <SelectItem value="Data Science">Data Science</SelectItem>
                           <SelectItem value="Other">Other</SelectItem>
                         </SelectContent>
                       </Select>
@@ -368,10 +362,7 @@ export default function PredictPage() {
                               Completion Probability
                             </span>
                             <span className="text-sm font-bold">
-                              {(
-                                prediction.completion_probability * 100
-                              ).toFixed(2)}
-                              %
+                              {(prediction.completion_probability * 100).toFixed(2)}%
                             </span>
                           </div>
                           <div className="w-full bg-muted rounded-full h-3">
@@ -384,21 +375,15 @@ export default function PredictPage() {
                                   : "bg-red-500"
                               }`}
                               style={{
-                                width: `${
-                                  prediction.completion_probability * 100
-                                }%`,
+                                width: `${prediction.completion_probability * 100}%`,
                               }}
                             />
                           </div>
                         </div>
 
                         <div className="flex justify-between items-center">
-                          <span className="text-sm font-medium">
-                            Dropout Risk
-                          </span>
-                          <Badge
-                            className={getRiskColor(prediction.dropout_risk)}
-                          >
+                          <span className="text-sm font-medium">Dropout Risk</span>
+                          <Badge className={getRiskColor(prediction.dropout_risk)}>
                             {prediction.dropout_risk === "High" && (
                               <TrendingDown className="w-3 h-3 mr-1" />
                             )}
@@ -408,7 +393,6 @@ export default function PredictPage() {
                             {prediction.dropout_risk}
                           </Badge>
                         </div>
-
                       </CardContent>
                     </Card>
 
@@ -418,49 +402,37 @@ export default function PredictPage() {
                       </CardHeader>
                       <CardContent className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">
-                            Time Spent:
-                          </span>
+                          <span className="text-muted-foreground">Time Spent:</span>
                           <span className="font-medium">
                             {prediction.input_data.TimeSpentOnCourse} min
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">
-                            Videos Watched:
-                          </span>
+                          <span className="text-muted-foreground">Videos Watched:</span>
                           <span className="font-medium">
                             {prediction.input_data.NumberOfVideosWatched}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">
-                            Quizzes Taken:
-                          </span>
+                          <span className="text-muted-foreground">Quizzes Taken:</span>
                           <span className="font-medium">
                             {prediction.input_data.NumberOfQuizzesTaken}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">
-                            Avg Quiz Score:
-                          </span>
+                          <span className="text-muted-foreground">Avg Quiz Score:</span>
                           <span className="font-medium">
                             {prediction.input_data.QuizScores}%
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">
-                            Completion Rate:
-                          </span>
+                          <span className="text-muted-foreground">Completion Rate:</span>
                           <span className="font-medium">
                             {prediction.input_data.CompletionRate}%
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">
-                            Category:
-                          </span>
+                          <span className="text-muted-foreground">Category:</span>
                           <span className="font-medium">
                             {prediction.input_data.CourseCategory}
                           </span>
@@ -479,8 +451,7 @@ export default function PredictPage() {
                     <CardContent className="text-center py-12">
                       <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                       <p className="text-muted-foreground">
-                        Fill in the form and click Generate Prediction to see
-                        results
+                        Fill in the form and click Generate Prediction to see results
                       </p>
                     </CardContent>
                   </Card>
