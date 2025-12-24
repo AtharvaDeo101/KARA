@@ -17,3 +17,6 @@ The pre-trained model must be present at <br>backend/models/completion_model.pkl
 <h4>Step 5: Run UI</h4>
 - npm install <br>
 - npm run dev 
+<h4>Input and Output Format</h4>
+Input Fields (Required)
+FieldTypeDescription / ConstraintsTimeSpentOnCoursefloatTotal time spent (e.g., 120.5)NumberOfVideosWatchedintNumber of videos watched (≥ 0)NumberOfQuizzesTakenintNumber of quizzes taken (≥ 0)QuizScoresfloatAverage quiz score (0–100)CompletionRatefloatCurrent completion percentage (0–100)CourseCategorystringOne of: Programming, Business, Design, Marketing, Data Science, OtherDeviceTypestringOne of: Desktop, Mobile, Tablet
