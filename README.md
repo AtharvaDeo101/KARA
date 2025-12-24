@@ -84,9 +84,6 @@ All core logic (data preprocessing, model training, prediction handling, risk th
 
 ---
 
-## 📄 License
-
-This project is part of an internship assessment and is for educational purposes.
 
 ## 🤝 Contributing
 
@@ -94,4 +91,3 @@ This is an assessment project, but feedback and suggestions are welcome!
 
 ---
 
-**Built with ❤️ for AI Kata**
