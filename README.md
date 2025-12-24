@@ -3,17 +3,17 @@ This project is a production-ready AI-powered tool built for the AI Kata: Buildi
 It predicts whether a learner will complete an online course based on their engagement data, using a trained machine learning model.
 <br><hr>
 <h3>How to Run It Locally</h3>
-###Step 1: Clone the Repository<br>
+<h4>Step 1: Clone the Repository</h4><br>
 - git clone https://github.com/atharvadeo101/atharvadeo101-kara.git<br>
 - cd atharvadeo101-kara
-### Step 2: Install Dependencies<br>
-- cd backend
+<h4>Step 2: Install Dependencies</h4><br>
+- cd backend<br>
 - pip install -r requirements.txt
-### Step 3: Ensure Model File Exists
-The pre-trained model must be present at backend/models/completion_model.pkl.<br>
+<h4>Step 3: Ensure Model File Exists</h4>
+The pre-trained model must be present at <br>backend/models/completion_model.pkl.<br>
 - python train.py
-### Step 4: Run the Tool 
+<h4>Step 4: Run the Tool</h4> 
 - python app.py
-### Step 5: Run UI
-- npm install 
+<h4>Step 5: Run UI</h4>
+- npm install <br>
 - npm run dev 
